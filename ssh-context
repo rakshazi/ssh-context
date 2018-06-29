@@ -1,0 +1,95 @@
+#!/bin/bash
+
+# Configuration
+SSH_CONTEXT_DIR="$HOME/.ssh/context"
+SSH_CONTEXT_CURRENT="default"
+
+
+main(){
+    if [[ "$(type -t "$1")" = function ]]; then
+        $1 ${@:2}
+    else
+        _show_help
+    fi
+}
+
+# Set current SSH Context
+switch() {
+    echo $1 > $SSH_CONTEXT_DIR/current
+    _message "Changed current context to \e[96m$1\e[0m"
+}
+
+# Load current SSH Context
+load() {
+    if [[ -z "$1" ]]; then
+        SSH_CONTEXT_CURRENT=$(cat $SSH_CONTEXT_DIR/current)
+    fi
+}
+
+# Create file structure
+bootstrap() {
+    init default
+    switch default
+}
+
+# Create new context
+init() {
+    if [[ -z "$1" ]]; then
+        _message "\e[31mYou missed context name argument, check help for all available arguments\e[0m"
+        exit 1
+    elif [[ -f "$SSH_CONTEXT_DIR/$1/context" ]]; then
+        _message "\e[96m$1\e[0m context already created"
+        exit 1
+    fi
+    mkdir -p $SSH_CONTEXT_DIR/$1/keys
+    echo -e "# This is ssh config for $1 context\n# Documentation: https://www.ssh.com/ssh/config/\n\n\n\n# vim: ft=sshconfig" > $SSH_CONTEXT_DIR/$1/context
+    _message "Created \e[96m$1\e[0m context"
+    _message "Configure \e[96m$1\e[0m context in \e[37m$SSH_CONTEXT_DIR/$1/context\e[0m"
+    _message "Save \e[96m$1\e[0m keys in \e[37m$SSH_CONTEXT_DIR/$1/keys\e[0m"
+}
+
+# wrapper around ssh client
+wrapper() {
+    load
+    # If force context set (as argument) and context's file exists
+    if [[ -f "$SSH_CONTEXT_DIR/$1/context" ]]; then
+        _run_ssh "$1" "${@:2}"
+    # If context not found, use current/default context
+    elif [[ ! -f "$SSH_CONTEXT_DIR/$1/context" ]] && [[ -f "$SSH_CONTEXT_DIR/$SSH_CONTEXT_CURRENT/context" ]]; then
+        _run_ssh "$SSH_CONTEXT_CURRENT" "${@:1}"
+    # If neither context argument, no current/default context found
+    else
+        _message "\e[31mNo context found in $SSH_CONTEXT_DIR\e[0m"
+        exit 1
+    fi
+}
+
+# internal, run ssh
+_run_ssh() {
+    _message "Using context \e[96m$1\e[0m (\e[37m$SSH_CONTEXT_DIR/$1/context\e[0m)"
+    ssh -F "$SSH_CONTEXT_DIR/$1/context" $2
+}
+
+# internal, show message
+_message() {
+    echo -e "\e[1m\e[34m[ssh-context]\e[0m $1"
+}
+
+_show_help() {
+    load
+    _message "ssh-context <command>
+
+    CURRENT: $SSH_CONTEXT_CURRENT
+
+    Simple wrapper for SSH commands with context support.
+    Like kubectl config's contexts
+
+ssh-context bootstrap # Init ssh-context file structure
+ssh-context init CONTEXT_NAME # Create new context
+ssh-context load # load current context config
+ssh-context switch CONTEXT_NAME # set new context as current
+ssh-context wrapper [CONTEXT] SSH_ARGS # wrapper around ssh client. First optional arg is context name
+"
+}
+
+main "$@"
