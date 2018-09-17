@@ -67,7 +67,7 @@ wrapper() {
 # internal, run ssh
 _run_ssh() {
     _message "Using context \e[96m$1\e[0m (\e[37m$SSH_CONTEXT_DIR/$1/context\e[0m)"
-    ssh -F "$SSH_CONTEXT_DIR/$1/context" $2
+    ssh -F "$SSH_CONTEXT_DIR/$1/context" ${@:2}
 }
 
 # internal, show message
