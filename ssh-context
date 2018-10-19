@@ -23,7 +23,15 @@ switch() {
 load() {
     if [[ -z "$1" ]]; then
         SSH_CONTEXT_CURRENT=$(cat $SSH_CONTEXT_DIR/current)
+    else
+        SSH_CONTEXT_CURRENT=$1
     fi
+}
+
+# Edit context
+edit() {
+    load $1
+    $EDITOR $SSH_CONTEXT_DIR/$SSH_CONTEXT_CURRENT/context
 }
 
 # Create file structure
@@ -88,6 +96,7 @@ ssh-context bootstrap # Init ssh-context file structure
 ssh-context init CONTEXT_NAME # Create new context
 ssh-context load # load current context config
 ssh-context switch CONTEXT_NAME # set new context as current
+ssh-context edit [CONTEXT] # edit context config
 ssh-context wrapper [CONTEXT] SSH_ARGS # wrapper around ssh client. First optional arg is context name
 "
 }
