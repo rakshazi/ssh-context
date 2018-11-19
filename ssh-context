@@ -16,6 +16,7 @@ main(){
 # Set current SSH Context
 switch() {
     echo $1 > $SSH_CONTEXT_DIR/current
+    ln -fs $SSH_CONTEXT_DIR/$1/context $HOME/.ssh/config
     _message "Changed current context to \e[96m$1\e[0m"
 }
 
