@@ -1,4 +1,4 @@
-# ssh-context
+# ssh-context [![Donate](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.com/rakshazi/donate)
 
 Bash wrapper around ssh which provides you ability to use contexts (as in kubectl) for SSH.
 
