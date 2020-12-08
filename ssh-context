@@ -18,6 +18,7 @@ switch() {
     echo $1 > $SSH_CONTEXT_DIR/current
     ln -fs $SSH_CONTEXT_DIR/$1/context $HOME/.ssh/config
     _message "Changed current context to \e[96m$1\e[0m"
+    _set_git $1
 }
 
 # Load current SSH Context
@@ -60,9 +61,13 @@ init() {
 # wrapper around ssh client
 wrapper() {
     load
+    git_context=$(git config ssh.context)
     # If force context set (as argument) and context's file exists
     if [[ -f "$SSH_CONTEXT_DIR/$1/context" ]]; then
         _run_ssh "$1" "${@:2}"
+    # If git context is available
+    elif [[ -n $git_context ]]; then
+        _run_ssh $git_context "${@:1}"
     # If context not found, use current/default context
     elif [[ ! -f "$SSH_CONTEXT_DIR/$1/context" ]] && [[ -f "$SSH_CONTEXT_DIR/$SSH_CONTEXT_CURRENT/context" ]]; then
         _run_ssh "$SSH_CONTEXT_CURRENT" "${@:1}"
@@ -77,6 +82,27 @@ wrapper() {
 _run_ssh() {
     _message "Using context \e[96m$1\e[0m (\e[37m$SSH_CONTEXT_DIR/$1/context\e[0m)"
     ssh -F "$SSH_CONTEXT_DIR/$1/context" ${@:2}
+}
+
+# internal, set context to git config
+_set_git() {
+    git -C $PWD rev-parse 2>/dev/null
+    is_git=$(echo $?)
+    if [[ "0" != $is_git ]]; then
+        _message "no git repo found"
+        return 1
+    fi
+
+    if [[ -f "$SSH_CONTEXT_DIR/$1/context" ]]; then
+        CONTEXT="$1"
+    elif [[ ! -f "$SSH_CONTEXT_DIR/$1/context" ]] && [[ -f "$SSH_CONTEXT_DIR/$SSH_CONTEXT_CURRENT/context" ]]; then
+        CONTEXT="$SSH_CONTEXT_CURRENT"
+    else
+        CONTEXT="default"
+    fi
+
+    _message "git repo found, set ssh.context=\e[96m$CONTEXT\e[0m"
+    git config ssh.context $CONTEXT
 }
 
 # internal, show message
@@ -96,7 +122,7 @@ _show_help() {
 ssh-context bootstrap # Init ssh-context file structure
 ssh-context init CONTEXT_NAME # Create new context
 ssh-context load # load current context config
-ssh-context switch CONTEXT_NAME # set new context as current
+ssh-context switch CONTEXT_NAME # set new context as current, IF your current directory is git dir, context will be saved to git
 ssh-context edit [CONTEXT] # edit context config
 ssh-context wrapper [CONTEXT] SSH_ARGS # wrapper around ssh client. First optional arg is context name
 "

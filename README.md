@@ -12,7 +12,7 @@ Better to describe it with example.
 And here is ssh-context.
 
 1. Project = context
-2. Context = separate ssh config, keys, etc.
+2. Context = separate ssh config, keys, git repos, etc.
 3. Use full power of isolated ssh config
 
 ## Installation
@@ -31,6 +31,12 @@ Just place `ssh-context` bash script in any location from your `$PATH`, `chmod +
 alias ssh="ssh-context wrapper"
 ```
 
+### Set context per git repo
+
+If you have multiple git repos, like `project1`, `project2`, `projectN`, etc. you may want to use them with different contexts.
+In that case, run `ssh-context switch CONTEXT_YOU_WANT_TO_USE_FOR_THAT_GIT_REPO` and context name will be saved to `git config ssh.context` var
+in your local repo (remote not affected).
+
 ## Usage
 
 **Install ssh-context**
@@ -46,6 +52,11 @@ ssh-context init myproject
 ```
 
 **Switch context**
+
+> **NOTE**: if you run `switch` inside the folder with git repo,
+> context name will be saved to `git config ssh.context`,
+> so next time when you will ssh from that folder, context from `git config ssh.context`
+> will be used automaticly, if you don't set context name explicitly.
 
 ```bash
 ssh-context switch context_name
